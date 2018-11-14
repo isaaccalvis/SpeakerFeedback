@@ -12,7 +12,12 @@ import android.widget.Toast;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private TextView textview;
     private String userId;
+    private ListenerRegistration roomRegistration;
+    private ListenerRegistration usersRegistration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +50,56 @@ public class MainActivity extends AppCompatActivity {
             // Ja està registrat, mostrem el id al Log
             Log.i("SpeakerFeedback", "userId = " + userId);
         }
+
+
+    }
+
+    private EventListener<DocumentSnapshot> roomListener = new EventListener<DocumentSnapshot>() {
+        @Override
+        public void onEvent(DocumentSnapshot documentSnapshot, FirebaseFirestoreException e) {
+            if (e != null)
+            {
+                Log.e("SpeakerFeedback", "error al rebre rooms/testroom", e);
+                return;
+            }
+            String name = documentSnapshot.getString("name");
+            setTitle(name);
+        }
+    };
+
+    private EventListener<QuerySnapshot> usersListener = new EventListener<QuerySnapshot>() {
+        @Override
+        public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
+            if (e != null)
+            {
+                Log.e("SpeakerFeedback", "error al rebre usuaris dins un room", e);
+                return;
+            }
+            //textview.setText(String.format("NUMusers : %d", documentSnapshots.size()));
+            String nomUsuari = "";
+            // Això és per pillar tots els noms que hi ha a la base de dades dins de room
+            for (DocumentSnapshot doc : documentSnapshots)
+            {
+                nomUsuari += doc.getString("name") + "\n";
+            }
+            textview.setText(nomUsuari);
+        }
+    };
+
+    protected void onStart()
+    {
+        super.onStart();
+        // Posem un listener al room de la base de dades
+        roomRegistration = db.collection("rooms").document("testroom").addSnapshotListener(roomListener);
+        usersRegistration = db.collection("users").whereEqualTo("room", "testroom").addSnapshotListener(usersListener);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // al parar l'app eliminem el listener de la base de dades
+        roomRegistration.remove();
+        usersRegistration.remove();
     }
 
     @Override
