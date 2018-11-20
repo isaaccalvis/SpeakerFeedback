@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,15 +20,20 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int REGISTER_USER = 0;
+
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private TextView textview;
+
     private String userId;
+    private List<Poll> polls;
+
     private ListenerRegistration roomRegistration;
     private ListenerRegistration usersRegistration;
 
@@ -35,8 +41,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        textview = findViewById(R.id.textview);
 
         // Busquem a les preferències de l'app l'ID de l'usuari per saber si ja s'havia registrat
         SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
@@ -50,8 +54,6 @@ public class MainActivity extends AppCompatActivity {
             // Ja està registrat, mostrem el id al Log
             Log.i("SpeakerFeedback", "userId = " + userId);
         }
-
-
     }
 
     private EventListener<DocumentSnapshot> roomListener = new EventListener<DocumentSnapshot>() {
@@ -76,13 +78,30 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             //textview.setText(String.format("NUMusers : %d", documentSnapshots.size()));
-            String nomUsuari = "";
+            //String nomUsuari = "";
             // Això és per pillar tots els noms que hi ha a la base de dades dins de room
-            for (DocumentSnapshot doc : documentSnapshots)
-            {
-                nomUsuari += doc.getString("name") + "\n";
+            //for (DocumentSnapshot doc : documentSnapshots)
+            //{
+            //    nomUsuari += doc.getString("name") + "\n";
+            //}
+            //textview.setText(nomUsuari);
+        }
+    };
+
+    private EventListener<QuerySnapshot> pollsListener = new EventListener<QuerySnapshot>() {
+        @Override
+        public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
+            if (e != null){
+                Log.e("SpeakerFeedBack", "Error al rebre la llista de 'polls'");
+                return;
             }
-            textview.setText(nomUsuari);
+            polls = new ArrayList<>();
+            for (DocumentSnapshot doc : documentSnapshots){
+                Poll poll = doc.toObject(Poll.class);
+                polls.add(poll);
+            }
+            Log.i("SpeakerFeedback", String.format("He carregat %d polls.", polls.size()));
+            // TODO: Avisar l'adaptador
         }
     };
 
@@ -90,16 +109,9 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onStart();
         // Posem un listener al room de la base de dades
-        roomRegistration = db.collection("rooms").document("testroom").addSnapshotListener(roomListener);
-        usersRegistration = db.collection("users").whereEqualTo("room", "testroom").addSnapshotListener(usersListener);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // al parar l'app eliminem el listener de la base de dades
-        roomRegistration.remove();
-        usersRegistration.remove();
+        db.collection("rooms").document("testroom").addSnapshotListener(this, roomListener);
+        db.collection("users").whereEqualTo("room", "testroom").addSnapshotListener(this, usersListener);
+        db.collection("rooms").document("testroom").collection("polls").addSnapshotListener(this, pollsListener);
     }
 
     @Override
