@@ -1,16 +1,20 @@
 package edu.upc.citm.android.speakerfeedback;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -66,7 +70,12 @@ public class MainActivity extends AppCompatActivity {
         } else {
             // Ja està registrat, mostrem el id al Log
             Log.i("SpeakerFeedback", "userId = " + userId);
+            enterRoom();
         }
+    }
+
+    private void enterRoom() {
+        db.collection("users").document(userId).update("room", "testroom");
     }
 
     private EventListener<DocumentSnapshot> roomListener = new EventListener<DocumentSnapshot>() {
@@ -155,6 +164,7 @@ public class MainActivity extends AppCompatActivity {
                 userId = documentReference.getId();
                 SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
                 prefs.edit().putString("userId", userId).commit();
+                enterRoom();
                 Log.i("SpeakerFeedback", "New user: userId = " + userId);
             }
         }).addOnFailureListener(new OnFailureListener() {
@@ -173,6 +183,34 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public void OnPollClick(final int pos) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final String[] options = new String[polls.get(pos).getResults().size()];
+        for (int i = 0; i < polls.get(pos).getOptions().size(); i++)
+        {
+            options[i] = polls.get(pos).getOptions().get(i);
+        }
+
+        builder
+                .setTitle(polls.get(pos).getQuestion())
+                .setItems(options,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // The 'which' argument contains the index position
+                                // of the selected item
+                                Toast.makeText(MainActivity.this, polls.get(pos).getOptions().get(which), Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Toast.makeText(MainActivity.this, "Cancel", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+        builder.create().show();
+    }
+
     class ViewHolder extends  RecyclerView.ViewHolder{
         private CardView card_view;
         private TextView label_view;
@@ -185,6 +223,13 @@ public class MainActivity extends AppCompatActivity {
             label_view = itemView.findViewById(R.id.label_view);
             questions_view = itemView.findViewById(R.id.questions_view);
             options_view = itemView.findViewById(R.id.options_view);
+            card_view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int pos = getAdapterPosition();
+                    OnPollClick(pos);
+                }
+            });
         }
     }
 
