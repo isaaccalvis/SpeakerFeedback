@@ -150,13 +150,11 @@ public class MainActivity extends AppCompatActivity {
         db.collection("users").add(fields).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
             @Override
             public void onSuccess(DocumentReference documentReference) {
-                // Toast.makeText(MainActivity.this, "Success!", Toast.LENGTH_SHORT).show();
+                 Toast.makeText(MainActivity.this, "Success!", Toast.LENGTH_SHORT).show();
                 // textview.setText(documentReference.getId());
                 userId = documentReference.getId();
                 SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
-                prefs.edit()
-                        .putString("userId", userId)
-                        .commit();
+                prefs.edit().putString("userId", userId).commit();
                 Log.i("SpeakerFeedback", "New user: userId = " + userId);
             }
         }).addOnFailureListener(new OnFailureListener() {
@@ -168,6 +166,11 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    public void clickUsersNum(View view) {
+        Intent intent = new Intent(this, users_list.class);
+        startActivity(intent);
     }
 
     class ViewHolder extends  RecyclerView.ViewHolder{
