@@ -127,6 +127,18 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+//    private EventListener<QuerySnapshot> voteListener = new EventListener<QuerySnapshot>() {
+//        @Override
+//        public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
+//            if (e != null){
+//                Log.e("SpeakerFeedBack", "Error al rebre la llista de 'vote'");
+//                return;
+//            }
+//            Log.i("SpeakerFeedback", String.format("He carregat %d votes.", polls.size()));
+//            adapter.notifyDataSetChanged();
+//        }
+//    };
+
     protected void onStart()
     {
         super.onStart();
@@ -134,6 +146,7 @@ public class MainActivity extends AppCompatActivity {
         db.collection("rooms").document("testroom").addSnapshotListener(this, roomListener);
         db.collection("users").whereEqualTo("room", "testroom").addSnapshotListener(this, usersListener);
         db.collection("rooms").document("testroom").collection("polls").addSnapshotListener(this, pollsListener);
+    //    db.collection("rooms").document("testroom").collection("votes").addSnapshotListener(this,voteListener);
     }
 
     @Override
@@ -221,6 +234,7 @@ public class MainActivity extends AppCompatActivity {
         private TextView label_view;
         private TextView questions_view;
         private TextView options_view;
+        private TextView results_view;
 
         public ViewHolder(View itemView) {
             super(itemView);
@@ -228,6 +242,7 @@ public class MainActivity extends AppCompatActivity {
             label_view = itemView.findViewById(R.id.label_view);
             questions_view = itemView.findViewById(R.id.questions_view);
             options_view = itemView.findViewById(R.id.options_view);
+            results_view = itemView.findViewById(R.id.results_view);
             card_view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -280,6 +295,9 @@ public class MainActivity extends AppCompatActivity {
             }
             holder.questions_view.setText(poll.getQuestion());
             holder.options_view.setText(poll.getOptionsAsString());
+            if (poll.getResults() != null) {
+                holder.results_view.setText(poll.getResultsAsString());
+            }
         }
 
         @Override

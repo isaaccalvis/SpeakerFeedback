@@ -1,5 +1,7 @@
 package edu.upc.citm.android.speakerfeedback;
 
+import android.util.Log;
+
 import java.util.Date;
 import java.util.List;
 
@@ -68,5 +70,14 @@ public class Poll {
 
     public void setResults(List<Integer> results) {
         this.results = results;
+    }
+
+    public String getResultsAsString(){
+        StringBuilder b = new StringBuilder();
+        for (Integer opt : results) {
+            b.append(opt.toString());
+            b.append("\n");
+        }
+        return b.toString();
     }
 }
