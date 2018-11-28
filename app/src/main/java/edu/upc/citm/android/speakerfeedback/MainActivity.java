@@ -198,7 +198,12 @@ public class MainActivity extends AppCompatActivity {
                             public void onClick(DialogInterface dialog, int which) {
                                 // The 'which' argument contains the index position
                                 // of the selected item
-                                Toast.makeText(MainActivity.this, polls.get(pos).getOptions().get(which), Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(MainActivity.this, polls.get(pos).getOptions().get(which), Toast.LENGTH_SHORT).show();
+                                // Això no se si funciona però en teoria ha de sumar un punt al vot
+                                List<Integer> tmpList = polls.get(pos).getResults();
+                                tmpList.set(which, tmpList.get(which) + 1);
+                                polls.get(pos).setResults(tmpList);
+                                Toast.makeText(MainActivity.this, polls.get(pos).getResults().toString(), Toast.LENGTH_SHORT).show();
                             }
                         })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
