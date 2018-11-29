@@ -72,6 +72,18 @@ public class MainActivity extends AppCompatActivity {
             Log.i("SpeakerFeedback", "userId = " + userId);
             enterRoom();
         }
+        StartFirestoreService();
+    }
+
+    private void StartFirestoreService(){
+        Intent intent = new Intent(this, FirestoreListenerService.class);
+        intent.putExtra("room", "testroom");
+        startService(intent);
+    }
+
+    private void StopFirestoreService(){
+        Intent intent = new Intent(this, FirestoreListenerService.class);
+        stopService(intent);
     }
 
     private void enterRoom() {
@@ -120,24 +132,13 @@ public class MainActivity extends AppCompatActivity {
             polls = new ArrayList<>();
             for (DocumentSnapshot doc : documentSnapshots){
                 Poll poll = doc.toObject(Poll.class);
+                poll.setId(doc.getId());
                 polls.add(poll);
             }
             Log.i("SpeakerFeedback", String.format("He carregat %d polls.", polls.size()));
             adapter.notifyDataSetChanged();
         }
     };
-
-//    private EventListener<QuerySnapshot> voteListener = new EventListener<QuerySnapshot>() {
-//        @Override
-//        public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
-//            if (e != null){
-//                Log.e("SpeakerFeedBack", "Error al rebre la llista de 'vote'");
-//                return;
-//            }
-//            Log.i("SpeakerFeedback", String.format("He carregat %d votes.", polls.size()));
-//            adapter.notifyDataSetChanged();
-//        }
-//    };
 
     protected void onStart()
     {
@@ -146,7 +147,6 @@ public class MainActivity extends AppCompatActivity {
         db.collection("rooms").document("testroom").addSnapshotListener(this, roomListener);
         db.collection("users").whereEqualTo("room", "testroom").addSnapshotListener(this, usersListener);
         db.collection("rooms").document("testroom").collection("polls").addSnapshotListener(this, pollsListener);
-    //    db.collection("rooms").document("testroom").collection("votes").addSnapshotListener(this,voteListener);
     }
 
     @Override
@@ -197,36 +197,38 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void OnPollClick(final int pos) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        final String[] options = new String[polls.get(pos).getResults().size()];
-        for (int i = 0; i < polls.get(pos).getOptions().size(); i++)
-        {
-            options[i] = polls.get(pos).getOptions().get(i);
+        if (polls.get(pos).isOpen()) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            //if (polls.get(pos).getResults() != null) {
+            final String[] options = new String[polls.get(pos).getOptions().size()];
+            for (int i = 0; i < polls.get(pos).getOptions().size(); i++) {
+                options[i] = polls.get(pos).getOptions().get(i);
+            }
+
+            builder
+                    .setTitle(polls.get(pos).getQuestion())
+                    .setItems(options,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Map<String, Object> map = new HashMap<String, Object>();
+                                    map.put("pollid", polls.get(pos).getId());
+                                    map.put("option", which);
+                                    //List<Integer> tmpList = polls.get(pos).getResults();
+                                    //tmpList.set(which, tmpList.get(which) + 1);
+                                    //polls.get(pos).setResults(tmpList);
+                                    db.collection("rooms").document("testroom").collection("votes").document(userId).set(map);
+                                }
+                            })
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            Toast.makeText(MainActivity.this, "Cancel", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+            builder.create().show();
+            //}
         }
-
-        builder
-                .setTitle(polls.get(pos).getQuestion())
-                .setItems(options,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                // The 'which' argument contains the index position
-                                // of the selected item
-                                //Toast.makeText(MainActivity.this, polls.get(pos).getOptions().get(which), Toast.LENGTH_SHORT).show();
-                                // Això no se si funciona però en teoria ha de sumar un punt al vot
-                                List<Integer> tmpList = polls.get(pos).getResults();
-                                tmpList.set(which, tmpList.get(which) + 1);
-                                polls.get(pos).setResults(tmpList);
-                                Toast.makeText(MainActivity.this, polls.get(pos).getResults().toString(), Toast.LENGTH_SHORT).show();
-                            }
-                        })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        Toast.makeText(MainActivity.this, "Cancel", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-        builder.create().show();
     }
 
     class ViewHolder extends  RecyclerView.ViewHolder{
