@@ -12,6 +12,9 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -23,12 +26,15 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,6 +153,15 @@ public class MainActivity extends AppCompatActivity {
         db.collection("rooms").document("testroom").addSnapshotListener(this, roomListener);
         db.collection("users").whereEqualTo("room", "testroom").addSnapshotListener(this, usersListener);
         db.collection("rooms").document("testroom").collection("polls").addSnapshotListener(this, pollsListener);
+        /////////////////////////
+        db.collection("room").document("testroom").update("room", "testroom", "last_active", new Date());
+    }
+
+    //////////////////////
+    protected void onDestroy()
+    {
+        db.collection("users").document("testroom").update("room", FieldValue.delete());
+        super.onDestroy();
     }
 
     @Override
@@ -179,6 +194,9 @@ public class MainActivity extends AppCompatActivity {
                 prefs.edit().putString("userId", userId).commit();
                 enterRoom();
                 Log.i("SpeakerFeedback", "New user: userId = " + userId);
+                ////////////////////////////
+                db.collection("room").document("testroom").update("room", "testroom", "lasta_ctive", Calendar.getInstance().getTime());
+
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -307,4 +325,24 @@ public class MainActivity extends AppCompatActivity {
             return polls.size();
         }
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu ,menu );
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.close_sesion:
+                Toast.makeText(MainActivity.this, "Close App", Toast.LENGTH_SHORT).show();
+                stopService(new Intent(this, MainActivity.class));
+                finish();
+                break;
+        }
+        return true;
+    }
+
 }
