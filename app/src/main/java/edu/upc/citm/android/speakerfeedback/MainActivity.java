@@ -55,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
     private Adapter adapter;
     private TextView users_conected;
 
+    private String roomName;
+    private String roomPassword;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,15 +102,30 @@ public class MainActivity extends AppCompatActivity {
     private EventListener<DocumentSnapshot> roomListener = new EventListener<DocumentSnapshot>() {
         @Override
         public void onEvent(DocumentSnapshot documentSnapshot, FirebaseFirestoreException e) {
-            if (e != null)
-            {
+            if (e != null) {
                 Log.e("SpeakerFeedback", "error al rebre rooms/testroom", e);
                 return;
             }
-            String name = documentSnapshot.getString("name");
-            setTitle(name);
+            if (documentSnapshot.contains("open")) {
+                if (documentSnapshot.getBoolean("open") == true) {
+                    String name = documentSnapshot.getString("name");
+                    setTitle(name);
+                } else {
+                    // TODO: MILLORAR AIXO
+                    ChangeRoom("Room closed");
+                }
+            } else {
+                ChangeRoom("Room not found");
+            }
         }
     };
+
+    private void ChangeRoom(String msg)
+    {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent( this, ChangeRoom.class);
+        startActivity(intent);
+    }
 
     private EventListener<QuerySnapshot> usersListener = new EventListener<QuerySnapshot>() {
         @Override
@@ -155,6 +173,12 @@ public class MainActivity extends AppCompatActivity {
         db.collection("rooms").document("testroom").collection("polls").addSnapshotListener(this, pollsListener);
         /////////////////////////
         db.collection("room").document("testroom").update("room", "testroom", "last_active", new Date());
+
+        Intent intent = getIntent();
+        if (intent != null){
+            roomName = intent.getStringExtra("newRoom");
+            roomPassword = intent.getStringExtra("passwordRoom");
+        }
     }
 
     //////////////////////
@@ -341,8 +365,10 @@ public class MainActivity extends AppCompatActivity {
                 stopService(new Intent(this, MainActivity.class));
                 finish();
                 break;
+            case R.id.change_room:
+                ChangeRoom("Canviant Room");
+                break;
         }
         return true;
     }
-
 }
