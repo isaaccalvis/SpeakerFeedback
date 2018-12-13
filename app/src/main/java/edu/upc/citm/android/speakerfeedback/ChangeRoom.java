@@ -16,7 +16,7 @@ public class ChangeRoom extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_change_room);
-        editText = findViewById(R.id.changeRoomTextEdit);
+        editText = findViewById(R.id.changeRoomTextEdit2);
         passwordText = findViewById(R.id.changeRoomPswrdTextEdit);
     }
 
